@@ -8,6 +8,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "KMF Financial Analytics",
   description: "MBA Finance Internship Portfolio Dashboard",
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({
