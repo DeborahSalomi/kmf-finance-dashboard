@@ -1,0 +1,22 @@
+[
+  {
+    "Year": "FY24 (Actual)",
+    "Revenue": 46.95,
+    "Net_Profit": 1.25
+  },
+  {
+    "Year": "FY25 (Proj)",
+    "Revenue": 45.46,
+    "Net_Profit": 0.63
+  },
+  {
+    "Year": "FY26 (Proj)",
+    "Revenue": 44.01,
+    "Net_Profit": 0.61
+  },
+  {
+    "Year": "FY27 (Proj)",
+    "Revenue": 42.61,
+    "Net_Profit": 0.59
+  }
+]

@@ -1,0 +1,12 @@
+{
+  "Revenue_Billion": 46.95,
+  "NetProfit_Billion": 1.25,
+  "GrossMargin": 7.13,
+  "NetMargin": 2.65,
+  "PurchaseRatio": 90.63,
+  "CAGR": -3.18,
+  "AverageProfit": 3148.05,
+  "WorstCase": 380.53,
+  "BestCase": 6372.83,
+  "ProbabilityOfLoss": 0.0
+}

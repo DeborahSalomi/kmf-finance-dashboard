@@ -1,0 +1,23 @@
+[
+  {
+    "Scenario": "Best Case",
+    "Revenue_Change": 0.02,
+    "Purchase_Change": -0.02,
+    "Manufacturing_Change": -0.01,
+    "Profit_Million": 4936.85
+  },
+  {
+    "Scenario": "Base Case",
+    "Revenue_Change": 0.00,
+    "Purchase_Change": 0.00,
+    "Manufacturing_Change": 0.00,
+    "Profit_Million": 3134.74
+  },
+  {
+    "Scenario": "Worst Case",
+    "Revenue_Change": -0.02,
+    "Purchase_Change": 0.02,
+    "Manufacturing_Change": 0.01,
+    "Profit_Million": 1332.64
+  }
+]
