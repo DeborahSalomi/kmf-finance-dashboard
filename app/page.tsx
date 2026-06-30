@@ -16,13 +16,16 @@ export default function Home() {
     suggestion: "Upload required for AI analysis."
   });
 
-  useEffect(() => {
+ useEffect(() => {
     if (rawData && rawData.length > 0) {
       const latest = rawData[0];
-      if (latest.Revenue) {
-        const rev = latest.Revenue;
-        const prof = latest.Profit || 0;
-        const margin = ((prof / rev) * 100).toFixed(1);
+      if (latest.Revenue !== undefined) {
+        // Safety net: Force values to be numbers before doing math
+        const rev = Number(latest.Revenue || 0);
+        const prof = Number(latest.Profit || 0);
+        
+        // Prevent division by zero if revenue is 0
+        const margin = rev > 0 ? ((prof / rev) * 100).toFixed(1) : "0.0";
 
         let maxCostName = "Operational Costs";
         let maxCostValue = 0;
@@ -36,7 +39,7 @@ export default function Home() {
           }
         });
 
-        const costPercentage = ((maxCostValue / rev) * 100).toFixed(1);
+        const costPercentage = rev > 0 ? ((maxCostValue / rev) * 100).toFixed(1) : "0.0";
 
         setInsights({
           situation: `The uploaded model indicates a net profit margin of ${margin}%. The largest financial drain is currently ${maxCostName}, which consumes approximately ${costPercentage}% of total generated revenue.`,
@@ -50,12 +53,17 @@ export default function Home() {
 
   const handleNewData = (parsedData: any[]) => {
     if (parsedData.length > 0) {
-      setRawData(parsedData); // Commits to Global State
+      setRawData(parsedData); 
       
-      if (parsedData[0].Revenue) {
+      const latest = parsedData[0];
+      if (latest.Revenue !== undefined) {
+        // Bulletproof the KPI grid formatting against blank cells
+        const safeRev = Number(latest.Revenue || 0);
+        const safeProf = Number(latest.Profit || 0);
+
         setDashboardData([
-          { title: "Total Revenue", value: `₹${parsedData[0].Revenue.toFixed(2)} B`, trend: "Base" },
-          { title: "Net Profit", value: `₹${parsedData[0].Profit?.toFixed(2) || "0"} B`, trend: "Dynamic Margin", positive: parsedData[0].Profit > 0 },
+          { title: "Total Revenue", value: `₹${safeRev.toFixed(2)} B`, trend: "Base" },
+          { title: "Net Profit", value: `₹${safeProf.toFixed(2)} B`, trend: "Dynamic Margin", positive: safeProf > 0 },
           { title: "Revenue CAGR", value: "Auto-Calc", trend: "Based on Upload", positive: true },
           { title: "Operating Risk", value: "Evaluating", trend: "Live Data Synced" }
         ]);
