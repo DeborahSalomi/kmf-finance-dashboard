@@ -77,7 +77,7 @@ export function StrategySimulator() {
       <div className="md:col-span-2 space-y-6">
         <Card className="rounded-2xl border border-white/10 bg-zinc-950/40 backdrop-blur-xl shadow-2xl">
           <CardContent className="pt-6">
-            <div className="h-[280px] w-full">
+            <div className="h-70 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData} margin={{ top: 20, right: 0, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
@@ -87,7 +87,13 @@ export function StrategySimulator() {
                     cursor={{ fill: '#18181b', opacity: 0.5 }}
                     contentStyle={{ backgroundColor: '#09090b', border: '1px solid #27272a', borderRadius: '8px' }}
                     itemStyle={{ color: '#10b981', fontWeight: 'bold' }}
-                    formatter={(value: number) => [`₹${value.toFixed(2)} Billion`, "Net Profit"]}
+                    formatter={(value) => {
+                      if (value === undefined || value === null) {
+                        return ["", "Net Profit"];
+                      }
+                      const numericValue = Number(value);
+                      return [`₹${numericValue.toFixed(2)} Billion`, "Net Profit"];
+                    }}
                   />
                   <Bar dataKey="Profit" radius={[6, 6, 0, 0]} barSize={80}>
                     {chartData.map((entry, index) => (
