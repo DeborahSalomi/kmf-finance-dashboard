@@ -1,126 +1,104 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { KpiGrid } from "@/components/dashboard/kpi-grid";
+import { useState } from "react";
+import { Card, CardTitle } from "@/components/ui/card";
+import { Slider } from "@/components/ui/slider";
+import { Button } from "@/components/ui/button";
 import { WaterfallChart } from "@/components/dashboard/waterfall-chart";
-import { DataUploader } from "@/components/dashboard/data-uploader";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Target, Lightbulb } from "lucide-react";
-import { useData } from "@/components/data-context";
+import { Target, Lightbulb, Plus, Minus, TrendingUp, Truck, Zap, Package, DollarSign, Activity, Droplet, Wallet } from "lucide-react";
 
-export default function Home() {
-  const { rawData, setRawData, dashboardData, setDashboardData } = useData();
+// 1. Constants at the top
+const BASE = { Revenue: 46.95, Procurement: 33.33, Transport: 3.12, Manufacturing: 9.25, Profit: 1.25 };
 
-  const [insights, setInsights] = useState({
-    situation: "Awaiting initial data scan. Upload a financial model to generate dynamic operational insights.",
-    suggestion: "Upload required for AI analysis."
-  });
+// 2. Helper Component (Inside the same file is fine)
+const StatCard = ({ title, value, icon }: { title: string; value: string; icon?: React.ReactNode }) => (
+  <Card className="bg-zinc-900 border-zinc-800 p-4 flex justify-between items-center">
+    <div>
+      <p className="text-[10px] text-zinc-500 uppercase tracking-widest">{title}</p>
+      <h3 className="text-lg font-bold mt-1">{value}</h3>
+    </div>
+    {icon && <div className="h-8 w-8 rounded-full bg-zinc-800 flex items-center justify-center text-emerald-500">{icon}</div>}
+  </Card>
+);
 
- useEffect(() => {
-    if (rawData && rawData.length > 0) {
-      const latest = rawData[0];
-      if (latest.Revenue !== undefined) {
-        // Safety net: Force values to be numbers before doing math
-        const rev = Number(latest.Revenue || 0);
-        const prof = Number(latest.Profit || 0);
-        
-        // Prevent division by zero if revenue is 0
-        const margin = rev > 0 ? ((prof / rev) * 100).toFixed(1) : "0.0";
+// 3. ONLY ONE DEFAULT EXPORT
+export default function FinBoardPro() {
+  const [levers, setLevers] = useState({ procurement: 11, vadp: 8, logistics: 5, pricing: 8, expansion: 9 });
+  const [activeTab, setActiveTab] = useState("Executive Dashboard");
 
-        let maxCostName = "Operational Costs";
-        let maxCostValue = 0;
-        
-        Object.keys(latest).forEach(key => {
-          if (key !== "name" && key !== "Revenue" && key !== "Profit" && typeof latest[key] === 'number') {
-            if (latest[key] > maxCostValue) {
-              maxCostValue = latest[key];
-              maxCostName = key;
-            }
-          }
-        });
+  // Calculations
+  const revenue = BASE.Revenue * (1 + (levers.pricing / 100) + (levers.vadp / 100));
+  const profit = BASE.Profit * (1 + (levers.pricing / 100) + (levers.logistics / 100) - (levers.procurement / 100));
+  const margin = (profit / revenue) * 100;
 
-        const costPercentage = rev > 0 ? ((maxCostValue / rev) * 100).toFixed(1) : "0.0";
-
-        setInsights({
-          situation: `The uploaded model indicates a net profit margin of ${margin}%. The largest financial drain is currently ${maxCostName}, which consumes approximately ${costPercentage}% of total generated revenue.`,
-          suggestion: parseFloat(margin) < 5
-            ? `Margins are critically tight. AI/CFO Recommendation: Immediately freeze the ${maxCostName} budget and initiate an internal efficiency audit. Shift focus to higher-margin product lines.`
-            : `Healthy margin detected (${margin}%). AI/CFO Recommendation: Reinvest 15-20% of net profits into R&D or market expansion while maintaining strict control over ${maxCostName}.`
-        });
-      }
-    }
-  }, [rawData]);
-
-  const handleNewData = (parsedData: any[]) => {
-    if (parsedData.length > 0) {
-      setRawData(parsedData); 
-      
-      const latest = parsedData[0];
-      if (latest.Revenue !== undefined) {
-        // Bulletproof the KPI grid formatting against blank cells
-        const safeRev = Number(latest.Revenue || 0);
-        const safeProf = Number(latest.Profit || 0);
-
-        setDashboardData([
-          { title: "Total Revenue", value: `₹${safeRev.toFixed(2)} B`, trend: "Base" },
-          { title: "Net Profit", value: `₹${safeProf.toFixed(2)} B`, trend: "Dynamic Margin", positive: safeProf > 0 },
-          { title: "Revenue CAGR", value: "Auto-Calc", trend: "Based on Upload", positive: true },
-          { title: "Operating Risk", value: "Evaluating", trend: "Live Data Synced" }
-        ]);
-      }
-    }
+  const adjustLever = (key: string, delta: number) => {
+    setLevers(prev => ({ ...prev, [key]: Math.max(0, Math.min(20, (prev[key as keyof typeof levers] || 0) + delta)) }));
   };
 
+  const getCFOInsights = () => [
+    levers.procurement >= 10 ? "• Procurement: Efficiency optimized. Above target." : "• Procurement: Efficiency low. Need 10%+ to save ₹1.2B.",
+    levers.vadp >= 10 ? "• VADP Mix: High. Revenue well-diversified." : "• VADP Mix: Low. Shift 10%+ for premium ROI.",
+    levers.logistics >= 10 ? "• Logistics: Optimized. Distribution overheads at low." : "• Logistics: High overheads. Need 10%+ optimization.",
+    levers.pricing >= 10 ? "• Pricing: Strategic. Offsetting inflation." : "• Pricing: Risk. Adjust to offset supply chain costs.",
+    levers.expansion >= 10 ? "• Expansion: Cold-chain capacity driving growth." : "• Expansion: Constrained. Capacity capping growth."
+  ];
+
   return (
-    <div className="space-y-6 animate-in fade-in duration-700">
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-100">Executive Dashboard</h1>
-          <p className="text-zinc-400 mt-2">
-            Financial performance overview and cost structure analysis.
-          </p>
-        </div>
-        <div className="w-72">
-          <DataUploader onDataParsed={handleNewData} />
-        </div>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold mb-6">{activeTab}</h1>
+      
+      {/* KPI Row */}
+      <div className="grid grid-cols-4 gap-4">
+        <StatCard title="Revenue (FY24)" value={`₹${revenue.toFixed(2)} B`} icon={<TrendingUp size={16}/>} />
+        <StatCard title="Net Profit" value={`₹${profit.toFixed(2)} B`} icon={<Activity size={16}/>} />
+        <StatCard title="Net Margin %" value={`${margin.toFixed(2)}%`} icon={<Droplet size={16}/>} />
+        <StatCard title="Break-Even Shock" value="3.75%" icon={<Wallet size={16}/>} />
       </div>
 
-      <KpiGrid data={dashboardData as any} />
-      
-      <div className="grid gap-6 md:grid-cols-3">
-        <div className="md:col-span-2">
-          <WaterfallChart data={rawData as any} />
-        </div>
-
-        <Card className="md:col-span-1 rounded-2xl border border-white/10 bg-zinc-950/40 backdrop-blur-xl shadow-2xl relative overflow-hidden flex flex-col">
-          <CardHeader className="border-b border-zinc-800/50 pb-4">
-            <CardTitle className="text-zinc-100 flex items-center text-lg">
-              <Target className="w-5 h-5 mr-2 text-emerald-500" />
-              Strategic Overview
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-6 space-y-6 flex-1">
-            <div>
-              <h4 className="text-sm font-bold text-zinc-200 mb-2">Current Situation</h4>
-              <p className="text-sm text-zinc-400 leading-relaxed transition-all duration-500">
-                {insights.situation}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 relative overflow-hidden transition-all duration-500">
-              <div className="absolute top-0 right-0 p-2 opacity-10">
-                <Lightbulb className="w-12 h-12 text-emerald-500" />
+      {/* Strategic Hub & Planner */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="bg-zinc-900 border-zinc-800 p-6">
+          <CardTitle className="text-sm mb-6 flex items-center"><Target className="mr-2 text-emerald-500" size={16}/> Risk & Sensitivity Planner</CardTitle>
+          <div className="space-y-5">
+            {[ { label: "Procurement Efficiency", key: "procurement", icon: <Zap size={14}/> }, { label: "VADP Revenue Mix", key: "vadp", icon: <Package size={14}/> }, { label: "Logistics Optimization", key: "logistics", icon: <Truck size={14}/> }, { label: "Pricing Strategy", key: "pricing", icon: <DollarSign size={14}/> }, { label: "Expansion Capacity", key: "expansion", icon: <TrendingUp size={14}/> } ].map(item => (
+              <div key={item.key}>
+                <div className="flex justify-between text-xs mb-2">
+                  <span className="flex items-center gap-2 text-zinc-300">{item.icon} {item.label}</span>
+                  <div className="flex items-center gap-2">
+                    <Button size="icon" variant="outline" className="h-6 w-6" onClick={() => adjustLever(item.key, -1)}><Minus size={12}/></Button>
+                    <span className="font-bold text-emerald-500 w-8 text-center">{levers[item.key as keyof typeof levers]}%</span>
+                    <Button size="icon" variant="outline" className="h-6 w-6" onClick={() => adjustLever(item.key, 1)}><Plus size={12}/></Button>
+                  </div>
+                </div>
+                <Slider value={[levers[item.key as keyof typeof levers]]} max={20} step={1} onValueChange={(v) => setLevers({...levers, [item.key]: v[0]})} />
               </div>
-              <h4 className="text-sm font-bold text-emerald-400 mb-2 flex items-center">
-                <Lightbulb className="w-4 h-4 mr-1.5" /> AI / CFO Suggestion
-              </h4>
-              <p className="text-sm text-zinc-300 leading-relaxed">
-                {insights.suggestion}
-              </p>
-            </div>
-          </CardContent>
+            ))}
+          </div>
+        </Card>
+
+        <Card className="bg-zinc-900 border-zinc-800 p-6">
+           <CardTitle className="text-sm flex items-center text-emerald-500"><Lightbulb className="mr-2" size={16}/> CFO Strategic Directive</CardTitle>
+           <div className="mt-4 bg-emerald-500/5 p-4 rounded border border-emerald-500/10 text-xs text-zinc-300">
+             {getCFOInsights().map((p, i) => <p key={i}>{p}</p>)}
+           </div>
         </Card>
       </div>
+
+      {/* Waterfall Chart - Fixed Height and Padding */}
+        <Card className="bg-zinc-900 border-zinc-800 p-6 pb-10">
+          <CardTitle className="text-sm mb-6">FY24 Cost Structure & Profitability (Billion INR)</CardTitle>
+          <div className="h-[400px] w-full">
+            <WaterfallChart 
+              data={[{ 
+                Revenue: revenue, 
+                Procurement: BASE.Procurement, 
+                Transport: BASE.Transport, 
+                Manufacturing: BASE.Manufacturing, 
+                Profit: profit 
+              }]} 
+            />
+          </div>
+        </Card>
     </div>
   );
 }

@@ -1,43 +1,55 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency, formatPercent } from "@/lib/utils";
-import { IndianRupee, TrendingDown, TrendingUp, AlertTriangle } from "lucide-react";
-import { DashboardMetrics } from "@/types/finance";
-import { motion } from "framer-motion";
+import { Card, CardContent } from "@/components/ui/card";
+import { TrendingUp, TrendingDown, Minus, AlertTriangle, IndianRupee } from "lucide-react";
 
-interface KpiGridProps {
-  data: DashboardMetrics;
+interface KpiData {
+  title: string;
+  value: string | number;
+  trend: string;
+  positive?: boolean;
 }
 
-export function KpiGrid({ data }: KpiGridProps) {
-  const kpis = [
-    { title: "Total Revenue (FY24)", value: formatCurrency(data.Revenue_Billion), icon: IndianRupee, trend: "Base", color: "text-zinc-100" },
-    { title: "Net Profit", value: formatCurrency(data.NetProfit_Billion), icon: TrendingUp, trend: `${formatPercent(data.NetMargin)} Margin`, color: "text-emerald-500" },
-    { title: "Revenue CAGR", value: formatPercent(data.CAGR), icon: TrendingDown, trend: "5-Year Trend", color: "text-rose-500" },
-    { title: "Operating Risk", value: formatCurrency(data.WorstCase / 1000), icon: AlertTriangle, trend: "Monte Carlo 5% Tail", color: "text-amber-500" },
-  ];
+export function KpiGrid({ data }: { data: KpiData[] }) {
+  // Safe formatting function
+  const formatValue = (val: any) => {
+    if (val === undefined || val === null) return "0.00";
+    if (typeof val === "number") return val.toFixed(2);
+    return val; 
+  };
+
+  // THE ARMOR: Explicitly verify data is an array before mapping
+  if (!Array.isArray(data) || data.length === 0) {
+    return null; 
+  }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-      {kpis.map((kpi, i) => (
-        <motion.div
-          key={i}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: i * 0.1, ease: "easeOut" }}
-        >
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-zinc-400">{kpi.title}</CardTitle>
-              <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-zinc-100 tracking-tight">{kpi.value}</div>
-              <p className="text-xs text-zinc-500 mt-1">{kpi.trend}</p>
-            </CardContent>
-          </Card>
-        </motion.div>
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {data.map((kpi, i) => (
+        <Card key={i} className="bg-zinc-950/40 border border-zinc-800/50 backdrop-blur-xl shadow-xl">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start space-y-0 pb-2">
+              <p className="text-sm font-medium text-zinc-400">{kpi.title}</p>
+              {kpi.title?.includes("Risk") ? (
+                <AlertTriangle className="h-4 w-4 text-amber-500" />
+              ) : kpi.title?.includes("Revenue") && !kpi.title?.includes("CAGR") ? (
+                <IndianRupee className="h-4 w-4 text-zinc-500" />
+              ) : kpi.positive ? (
+                <TrendingUp className="h-4 w-4 text-emerald-500" />
+              ) : kpi.positive === false ? (
+                <TrendingDown className="h-4 w-4 text-rose-500" />
+              ) : (
+                <Minus className="h-4 w-4 text-zinc-500" />
+              )}
+            </div>
+            <div className="flex flex-col gap-1">
+              <h2 className="text-2xl font-bold text-zinc-100 tracking-tight">
+                {formatValue(kpi.value)}
+              </h2>
+              <p className="text-xs text-zinc-500 font-medium">{kpi.trend}</p>
+            </div>
+          </CardContent>
+        </Card>
       ))}
     </div>
   );

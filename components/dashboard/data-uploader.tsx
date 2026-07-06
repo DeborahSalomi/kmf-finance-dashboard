@@ -1,88 +1,211 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { UploadCloud, CheckCircle2, AlertCircle } from "lucide-react";
-import { parseAndAutoDetectExcel } from "@/lib/excel-parser";
+import { useState } from "react";
+import * as XLSX from "xlsx";
+import { UploadCloud } from "lucide-react";
 
-interface DataUploaderProps {
-  onDataParsed: (data: any[]) => void;
-}
+type ParsedData = {
+  financial: Record<string, any[]>;
+  procurement: any[];
+};
 
-export function DataUploader({ onDataParsed }: DataUploaderProps) {
-  const [isDragging, setIsDragging] = useState(false);
-  const [status, setStatus] = useState<"idle" | "processing" | "success" | "error">("idle");
+export function DataUploader({
+  onDataParsed,
+}: {
+  onDataParsed: (data: ParsedData) => void;
+}) {
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleProcessFile = async (file: File) => {
-    if (!file.name.match(/\.(xlsx|xls|csv)$/)) {
-      setStatus("error");
-      return;
-    }
-    
-    setStatus("processing");
+  const handleFileUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploading(true);
+
+    const masterData: ParsedData = {
+      financial: {},
+      procurement: [],
+    };
+
     try {
-      const parsedData = await parseAndAutoDetectExcel(file);
-      onDataParsed(parsedData);
-      setStatus("success");
-      setTimeout(() => setStatus("idle"), 3000);
+      for (const file of Array.from(files)) {
+        const data = await readFile(file);
+
+        const name = file.name.toLowerCase();
+
+        // Financial Files
+        if (
+          /(profit|loss|p&l|income|balance|financial|ledger|trial|cash|expense|revenue)/.test(
+            name
+          )
+        ) {
+          masterData.financial[file.name] = data;
+        }
+
+        // Procurement Files
+        else if (
+          /(procurement|purchase|po|vendor|invoice|supplier|material)/.test(
+            name
+          )
+        ) {
+          masterData.procurement.push(...data);
+        }
+
+        // Unknown file → treat as financial by default
+        else {
+          masterData.financial[file.name] = data;
+        }
+      }
+
+      onDataParsed(masterData);
     } catch (error) {
-      setStatus("error");
+      console.error("Error reading files:", error);
+      alert("Failed to process one or more files.");
+    } finally {
+      setIsUploading(false);
+
+      // Allow selecting the same file again
+      e.target.value = "";
     }
   };
 
-  const onDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      handleProcessFile(e.dataTransfer.files[0]);
-    }
-  }, []);
+  const readFile = (file: File): Promise<any[]> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onerror = reject;
+
+      reader.onload = (evt) => {
+        try {
+          let workbook: XLSX.WorkBook;
+
+          if (file.name.toLowerCase().endsWith(".csv")) {
+            const text = evt.target?.result as string;
+            workbook = XLSX.read(text, { type: "string" });
+          } else {
+            const binary = evt.target?.result as string;
+            workbook = XLSX.read(binary, { type: "binary" });
+          }
+
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+
+          const rawData = XLSX.utils.sheet_to_json(sheet, {
+            header: 1,
+            defval: "",
+            blankrows: false,
+          }) as any[][];
+
+          if (!rawData.length) {
+            resolve([]);
+            return;
+          }
+
+          // Detect header row automatically
+          let headerRowIndex = 0;
+
+          const keywords = [
+            "revenue",
+            "amount",
+            "particulars",
+            "description",
+            "item",
+            "vendor",
+            "supplier",
+            "date",
+            "balance",
+            "account",
+            "debit",
+            "credit",
+            "invoice",
+            "purchase",
+            "expense",
+            "sales",
+            "material",
+            "qty",
+            "quantity",
+            "price",
+            "total",
+          ];
+
+          for (let i = 0; i < Math.min(15, rawData.length); i++) {
+            const rowText = rawData[i]
+              .map((cell) => String(cell).toLowerCase())
+              .join(" ");
+
+            if (keywords.some((k) => rowText.includes(k))) {
+              headerRowIndex = i;
+              break;
+            }
+          }
+
+          const headers = rawData[headerRowIndex].map((header, index) =>
+            header && String(header).trim() !== ""
+              ? String(header).trim()
+              : `Column_${index + 1}`
+          );
+
+          const cleanData = rawData
+            .slice(headerRowIndex + 1)
+            .filter((row) =>
+              row.some(
+                (cell) =>
+                  cell !== "" &&
+                  cell !== null &&
+                  cell !== undefined &&
+                  String(cell).trim() !== ""
+              )
+            )
+            .map((row) => {
+              const obj: Record<string, any> = {};
+
+              headers.forEach((header, i) => {
+                obj[header] = row[i] ?? "";
+              });
+
+              return obj;
+            });
+
+          resolve(cleanData);
+        } catch (err) {
+          reject(err);
+        }
+      };
+
+      if (file.name.toLowerCase().endsWith(".csv")) {
+        reader.readAsText(file);
+      } else {
+        reader.readAsBinaryString(file);
+      }
+    });
+  };
 
   return (
-    <div 
-      onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-      onDragLeave={() => setIsDragging(false)}
-      onDrop={onDrop}
-      className={`relative w-full p-6 border-2 border-dashed rounded-2xl transition-all duration-200 flex flex-col items-center justify-center text-center cursor-pointer ${
-        isDragging ? "border-emerald-500 bg-emerald-500/10" : "border-zinc-800 bg-zinc-950/50 hover:bg-zinc-900/50 hover:border-zinc-700"
-      }`}
-    >
-      <input 
-        type="file" 
-        accept=".xlsx, .xls, .csv"
-        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-        onChange={(e) => e.target.files && handleProcessFile(e.target.files[0])}
+    <div className="relative w-full cursor-pointer group">
+      <input
+        type="file"
+        multiple
+        accept=".xlsx,.xls,.csv"
+        onChange={handleFileUpload}
+        className="absolute inset-0 z-10 opacity-0 cursor-pointer"
       />
-      
-      {status === "idle" && (
-        <>
-          <div className="p-3 bg-zinc-900 rounded-full mb-3 shadow-xl border border-zinc-800">
-            <UploadCloud className="w-6 h-6 text-zinc-400" />
-          </div>
-          <p className="text-sm font-medium text-zinc-200">Upload Financial Model</p>
-          <p className="text-xs text-zinc-500 mt-1">Drag & drop .xlsx or .csv (Auto-detects mapping)</p>
-        </>
-      )}
 
-      {status === "processing" && (
-        <div className="flex flex-col items-center">
-          <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mb-3"></div>
-          <p className="text-sm font-medium text-emerald-400">Running AI Heuristics...</p>
-        </div>
-      )}
+      <div className="flex items-center justify-center gap-2 p-4 transition-all border-2 border-dashed rounded-xl bg-zinc-900 border-zinc-700 group-hover:border-emerald-500">
+        <UploadCloud
+          className={`w-5 h-5 ${
+            isUploading
+              ? "animate-pulse text-emerald-500"
+              : "text-zinc-400"
+          }`}
+        />
 
-      {status === "success" && (
-        <div className="flex flex-col items-center">
-          <CheckCircle2 className="w-8 h-8 text-emerald-500 mb-2" />
-          <p className="text-sm font-medium text-emerald-400">Data Mapped Successfully</p>
-        </div>
-      )}
-
-      {status === "error" && (
-        <div className="flex flex-col items-center">
-          <AlertCircle className="w-8 h-8 text-rose-500 mb-2" />
-          <p className="text-sm font-medium text-rose-400">Invalid File Format</p>
-        </div>
-      )}
+        <span className="text-sm font-bold text-zinc-300">
+          {isUploading
+            ? "Processing files..."
+            : "Upload CSV / Excel Files"}
+        </span>
+      </div>
     </div>
   );
 }
