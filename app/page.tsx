@@ -1,30 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useState, ReactNode } from "react";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { WaterfallChart } from "@/components/dashboard/waterfall-chart";
 import { Target, Lightbulb, Plus, Minus, TrendingUp, Truck, Zap, Package, DollarSign, Activity, Droplet, Wallet } from "lucide-react";
 
-// 1. Constants at the top
+// Master Financial Constants
 const BASE = { Revenue: 46.95, Procurement: 33.33, Transport: 3.12, Manufacturing: 9.25, Profit: 1.25 };
 
-// 2. Helper Component (Inside the same file is fine)
-const StatCard = ({ title, value, icon }: { title: string; value: string; icon?: React.ReactNode }) => (
+// Stat Card Component
+const StatCard = ({ title, value, icon }: { title: string; value: string; icon?: ReactNode }) => (
   <Card className="bg-zinc-900 border-zinc-800 p-4 flex justify-between items-center">
     <div>
       <p className="text-[10px] text-zinc-500 uppercase tracking-widest">{title}</p>
       <h3 className="text-lg font-bold mt-1">{value}</h3>
     </div>
-    {icon && <div className="h-8 w-8 rounded-full bg-zinc-800 flex items-center justify-center text-emerald-500">{icon}</div>}
+    {icon && <div className="text-emerald-500">{icon}</div>}
   </Card>
 );
 
-// 3. ONLY ONE DEFAULT EXPORT
 export default function FinBoardPro() {
   const [levers, setLevers] = useState({ procurement: 11, vadp: 8, logistics: 5, pricing: 8, expansion: 9 });
-  const [activeTab, setActiveTab] = useState("Executive Dashboard");
+  const [activeTab] = useState("Executive Dashboard");
 
   // Calculations
   const revenue = BASE.Revenue * (1 + (levers.pricing / 100) + (levers.vadp / 100));
@@ -36,11 +35,11 @@ export default function FinBoardPro() {
   };
 
   const getCFOInsights = () => [
-    levers.procurement >= 10 ? "• Procurement: Efficiency optimized. Above target." : "• Procurement: Efficiency low. Need 10%+ to save ₹1.2B.",
-    levers.vadp >= 10 ? "• VADP Mix: High. Revenue well-diversified." : "• VADP Mix: Low. Shift 10%+ for premium ROI.",
-    levers.logistics >= 10 ? "• Logistics: Optimized. Distribution overheads at low." : "• Logistics: High overheads. Need 10%+ optimization.",
-    levers.pricing >= 10 ? "• Pricing: Strategic. Offsetting inflation." : "• Pricing: Risk. Adjust to offset supply chain costs.",
-    levers.expansion >= 10 ? "• Expansion: Cold-chain capacity driving growth." : "• Expansion: Constrained. Capacity capping growth."
+    levers.procurement >= 10 ? "• Procurement: Efficiency optimized." : "• Procurement: Need 10%+ to save ₹1.2B.",
+    levers.vadp >= 10 ? "• VADP Mix: High." : "• VADP Mix: Shift 10%+ for ROI.",
+    levers.logistics >= 10 ? "• Logistics: Optimized." : "• Logistics: Need 10%+ optimization.",
+    levers.pricing >= 10 ? "• Pricing: Strategic." : "• Pricing: Risk. Adjust to offset costs.",
+    levers.expansion >= 10 ? "• Expansion: Growth driven." : "• Expansion: Constrained."
   ];
 
   return (
@@ -55,7 +54,7 @@ export default function FinBoardPro() {
         <StatCard title="Break-Even Shock" value="3.75%" icon={<Wallet size={16}/>} />
       </div>
 
-      {/* Strategic Hub & Planner */}
+      {/* Strategic Hub */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="bg-zinc-900 border-zinc-800 p-6">
           <CardTitle className="text-sm mb-6 flex items-center"><Target className="mr-2 text-emerald-500" size={16}/> Risk & Sensitivity Planner</CardTitle>
@@ -84,21 +83,15 @@ export default function FinBoardPro() {
         </Card>
       </div>
 
-      {/* Waterfall Chart - Fixed Height and Padding */}
-        <Card className="bg-zinc-900 border-zinc-800 p-6 pb-10">
-          <CardTitle className="text-sm mb-6">FY24 Cost Structure & Profitability (Billion INR)</CardTitle>
-          <div className="h-[400px] w-full">
-            <WaterfallChart 
-              data={[{ 
-                Revenue: revenue, 
-                Procurement: BASE.Procurement, 
-                Transport: BASE.Transport, 
-                Manufacturing: BASE.Manufacturing, 
-                Profit: profit 
-              }]} 
-            />
-          </div>
-        </Card>
+      {/* Waterfall Chart */}
+      <Card className="bg-zinc-900 border-zinc-800 p-6 pb-10">
+        <CardTitle className="text-sm mb-6">FY24 Cost Structure & Profitability (Billion INR)</CardTitle>
+        <div className="h-[400px] w-full">
+          <WaterfallChart 
+            data={[{ Revenue: revenue, Procurement: BASE.Procurement, Transport: BASE.Transport, Manufacturing: BASE.Manufacturing, Profit: profit }]} 
+          />
+        </div>
+      </Card>
     </div>
   );
 }
