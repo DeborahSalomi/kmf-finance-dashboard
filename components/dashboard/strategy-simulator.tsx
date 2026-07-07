@@ -52,7 +52,7 @@ export function StrategySimulator() {
             </div>
             <Slider 
               value={procurementSavings} 
-              onValueChange={setProcurementSavings} 
+              onValueChange={(v: any) => setProcurementSavings(Array.isArray(v) ? v : [v])} 
               max={5} step={0.1} 
               className="py-2"
             />
@@ -66,7 +66,7 @@ export function StrategySimulator() {
             </div>
             <Slider 
               value={vapMix} 
-              onValueChange={setVapMix} 
+              onValueChange={(v: any) => setVapMix(Array.isArray(v) ? v : [v])} 
               max={25} step={0.5} 
             />
             <p className="text-xs text-zinc-500">Target: 12.0%. Convert liquid milk to high-margin cheese/ghee.</p>
