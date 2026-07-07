@@ -69,7 +69,7 @@ export default function FinBoardPro() {
                     <Button size="icon" variant="outline" className="h-6 w-6" onClick={() => adjustLever(item.key, 1)}><Plus size={12}/></Button>
                   </div>
                 </div>
-                <Slider value={[levers[item.key as keyof typeof levers]]} max={20} step={1} onValueChange={(v) => setLevers({...levers, [item.key]: v[0]})} />
+                <Slider value={[levers[item.key as keyof typeof levers]]} max={20} step={1} onValueChange={(v: any) => setLevers({...levers, [item.key]: Array.isArray(v) ? v[0] : v})} />
               </div>
             ))}
           </div>
