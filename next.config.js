@@ -8,8 +8,8 @@ const withPWA = require('next-pwa')({
 });
 
 const nextConfig = {
-  // Silence the warning by using the correct experimental flag or just standardizing
-  // If Turbopack error persists, run: npm run dev -- --webpack
+  // We keep this empty because Vercel is now instructed to use 
+  // the --webpack flag via your package.json build script.
 };
 
 module.exports = withPWA(nextConfig);
