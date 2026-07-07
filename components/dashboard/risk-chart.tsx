@@ -11,7 +11,6 @@ import {
   Cell 
 } from "recharts";
 
-// Default chart data (ensure this matches your specific model if you were passing it via props)
 const chartData = [
   { name: "Base Scenario", value: 1.25 },
   { name: "Optimistic", value: 1.85 },
@@ -19,7 +18,7 @@ const chartData = [
   { name: "Stress Test", value: 0.45 },
 ];
 
-export function RiskChart() {
+export function RiskChart({ data }: { data?: any }) {
   return (
     <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">
